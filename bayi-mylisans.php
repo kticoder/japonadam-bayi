@@ -1,8 +1,8 @@
 <?php
 /*
 Plugin Name: Japon Adam Bayi
-Description: Woocommerce ile Aktivasyon Anahtarı Yönetimi
-Version: 1.1
+Description: Woocommerce ile Aktivasyon Anahtarı Yönetimi - Bayi
+Version: 1.2
 Author: [melih&ktidev]
 */
 
@@ -15,7 +15,6 @@ $myUpdateChecker = PucFactory::buildUpdateChecker(
 	'japonadam-bayi'
 );
 
-//Set the branch that contains the stable release.
 $myUpdateChecker->setBranch('main');
 $myUpdateChecker->getVcsApi()->enableReleaseAssets();
 
@@ -77,10 +76,15 @@ function custom_my_account_endpoint_content() {
 
     // REST API URL'si
     $api_url = 'https://japonadam.com/wp-json/mylisans/v1/get-activation-code';
-
+    $site_url = get_site_url();
+    # sadece http ise https yap
+    if (strpos($site_url, 'http://') !== false) {
+        $site_url = str_replace('http://', 'https://', $site_url);
+    }
     // API isteği için parametreler
     $api_params = array(
-        'user_id' => $user_id
+        'user_id' => $user_id,
+        'site_linki' => $site_url
     );
 
     // HTTP GET isteği yap
@@ -96,8 +100,9 @@ function custom_my_account_endpoint_content() {
 
         if ($data['success']) {
             $activation_code = $data['activation_code'];
-        } else {
-            echo 'Aktivasyon anahtarınız bulunmamaktadır.';
+        }  
+        else {
+            $activation_code =  $data['message'];
         }
     }
 
@@ -177,3 +182,69 @@ function custom_add_my_account_menu_items($items) {
     return $new_order;
 }
 add_filter('woocommerce_account_menu_items', 'custom_add_my_account_menu_items');
+
+function sync_products_from_other_site() {
+    // Diğer sitenin API URL'si
+    $api_url = 'https://japonadam.com/wp-json/wc/v3/products';
+
+    // API isteği için parametreler
+    $api_params = array(
+        'consumer_key' => 'ck_62fb6437017017c22426493949d64669db889200',
+        'consumer_secret' => 'cs_0e772a2146952388c73209dcd5e3a246939e53dd'
+    );
+
+    // HTTP GET isteği yap
+    $response = wp_remote_get(add_query_arg($api_params, $api_url));
+
+    // Yanıtı kontrol et ve hata olup olmadığını belirle
+    if (is_wp_error($response)) {
+        $error_message = $response->get_error_message();
+        error_log("Something went wrong: $error_message");
+    } else {
+        $products = json_decode(wp_remote_retrieve_body($response), true);
+
+        foreach ($products as $product) {
+            $existing_product = get_page_by_title($product['name'], OBJECT, 'product');
+
+            if ($existing_product) {
+                // Ürün zaten var, güncelle
+                wp_update_post(array(
+                    'ID' => $existing_product->ID,
+                    'post_content' => $product['description'],
+                    'post_excerpt' => $product['short_description']
+                ));
+                update_post_meta($existing_product->ID, '_price', $product['price']);
+                update_post_meta($existing_product->ID, '_sku', $product['sku']);
+            } else {
+                // Ürün yok, yeni bir ürün oluştur
+                $new_product = array(
+                    'post_title' => $product['name'],
+                    'post_content' => $product['description'],
+                    'post_excerpt' => $product['short_description'],
+                    'post_status' => 'publish',
+                    'post_type' => 'product',
+                    'post_author' => 1
+                );
+                $new_product_id = wp_insert_post($new_product);
+                update_post_meta($new_product_id, '_sku', $product['sku']);
+                update_post_meta($new_product_id, '_price', $product['price']);            }
+        }
+    }
+}
+// Özel zamanlama olayını tanımla
+add_filter('cron_schedules', 'custom_cron_schedules');
+function custom_cron_schedules($schedules) {
+    $schedules['every_ten_seconds'] = array(
+        'interval' => 10, // 10 saniye
+        'display'  => 'Every Ten Seconds',
+    );
+    return $schedules;
+}
+
+// Eğer zamanlanmış olay yoksa, yeni bir tane oluştur
+if (!wp_next_scheduled('sync_products_event')) {
+    wp_schedule_event(time(), 'every_ten_seconds', 'sync_products_event');
+}
+
+// Zamanlanmış olayı tetikleyen eylemi ekle
+add_action('sync_products_event', 'sync_products_from_other_site');
