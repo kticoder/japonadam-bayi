@@ -185,12 +185,12 @@ add_filter('woocommerce_account_menu_items', 'custom_add_my_account_menu_items')
 
 function sync_products_from_other_site() {
     // Diğer sitenin API URL'si
-    $api_url = 'https://japonadam.com/wp-json/wc/v3/products';
+    $api_url = 'https://other-woocommerce-site.com/wp-json/wc/v3/products';
 
     // API isteği için parametreler
     $api_params = array(
-        'consumer_key' => 'ck_62fb6437017017c22426493949d64669db889200',
-        'consumer_secret' => 'cs_0e772a2146952388c73209dcd5e3a246939e53dd'
+        'consumer_key' => 'ck_your_consumer_key',
+        'consumer_secret' => 'cs_your_consumer_secret'
     );
 
     // HTTP GET isteği yap
@@ -204,19 +204,18 @@ function sync_products_from_other_site() {
         $products = json_decode(wp_remote_retrieve_body($response), true);
 
         foreach ($products as $product) {
-            $existing_product = get_page_by_title($product['name'], OBJECT, 'product');
+            $existing_product_id = wc_get_product_id_by_sku($product['sku']);
 
-            if ($existing_product) {
+            if ($existing_product_id) {
                 // Ürün zaten var, güncelle
                 wp_update_post(array(
-                    'ID' => $existing_product->ID,
+                    'ID' => $existing_product_id,
                     'post_content' => $product['description'],
                     'post_excerpt' => $product['short_description']
                 ));
-                update_post_meta($existing_product->ID, '_price', $product['price']);
-                update_post_meta($existing_product->ID, '_sku', $product['sku']);
+                update_post_meta($existing_product_id, '_price', $product['price']);
+                update_post_meta($new_product_id, '_sku', $product['sku']);
             } else {
-                // Ürün yok, yeni bir ürün oluştur
                 $new_product = array(
                     'post_title' => $product['name'],
                     'post_content' => $product['description'],
@@ -227,7 +226,35 @@ function sync_products_from_other_site() {
                 );
                 $new_product_id = wp_insert_post($new_product);
                 update_post_meta($new_product_id, '_sku', $product['sku']);
-                update_post_meta($new_product_id, '_price', $product['price']);            }
+                update_post_meta($new_product_id, '_price', $product['price']);
+
+                // Ürün resmini ekle
+                if (!empty($product['images'][0]['src'])) {
+                    $image_url = $product['images'][0]['src'];
+                    $upload_dir = wp_upload_dir();
+                    $image_data = file_get_contents($image_url);
+                    $filename = basename($image_url);
+                    if (wp_mkdir_p($upload_dir['path'])) {
+                        $file = $upload_dir['path'] . '/' . $filename;
+                    } else {
+                        $file = $upload_dir['basedir'] . '/' . $filename;
+                    }
+                    file_put_contents($file, $image_data);
+
+                    $wp_filetype = wp_check_filetype($filename, null);
+                    $attachment = array(
+                        'post_mime_type' => $wp_filetype['type'],
+                        'post_title' => sanitize_file_name($filename),
+                        'post_content' => '',
+                        'post_status' => 'inherit'
+                    );
+                    $attach_id = wp_insert_attachment($attachment, $file, $new_product_id);
+                    require_once(ABSPATH . 'wp-admin/includes/image.php');
+                    $attach_data = wp_generate_attachment_metadata($attach_id, $file);
+                    wp_update_attachment_metadata($attach_id, $attach_data);
+                    set_post_thumbnail($new_product_id, $attach_id);
+                }
+            }
         }
     }
 }
