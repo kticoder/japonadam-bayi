@@ -72,7 +72,7 @@ add_action('init', 'custom_add_my_account_endpoint');
 // Hesabım sayfasında aktivasyon anahtarını gösterme
 function custom_my_account_endpoint_content() {
     $current_user = wp_get_current_user();
-    $user_id = $current_user->ID;
+    $user_email = $current_user->user_email;
 
     // REST API URL'si
     $api_url = 'https://japonadam.com/wp-json/mylisans/v1/get-activation-code';
@@ -83,7 +83,7 @@ function custom_my_account_endpoint_content() {
     }
     // API isteği için parametreler
     $api_params = array(
-        'user_id' => $user_id,
+        'user_email' => $user_email,
         'site_linki' => $site_url
     );
 
