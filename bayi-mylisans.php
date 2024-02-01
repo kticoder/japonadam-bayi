@@ -2,7 +2,7 @@
 /*
 Plugin Name: Japon Adam Bayi
 Description: Woocommerce ile Aktivasyon Anahtarı Yönetimi - Bayi
-Version: 1.4
+Version: 1.5
 Author: [melih&ktidev]
 */
 
@@ -23,6 +23,11 @@ function generate_activation_key_for_order($order_id) {
     $user_id = $order->get_user_id();
     $user_email = $order->get_billing_email();
     $purchased_products = array();
+    $site_url = get_site_url();
+    # sadece http ise https yap
+    if (strpos($site_url, 'http://') !== false) {
+        $site_url = str_replace('http://', 'https://', $site_url);
+    }
 
     foreach ($order->get_items() as $item) {
         $product_id = $item->get_product_id();
@@ -43,7 +48,8 @@ function generate_activation_key_for_order($order_id) {
         'body' => array(
             'user_id' => $user_id,
             'user_email' => $user_email,
-            'purchased_products' => $purchased_products
+            'purchased_products' => $purchased_products,
+            'satin_alinan_site' => $site_url
         ),
         'cookies' => array()
     ));
