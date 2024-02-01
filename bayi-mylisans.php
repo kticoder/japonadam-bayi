@@ -2,7 +2,7 @@
 /*
 Plugin Name: Japon Adam Bayi
 Description: Woocommerce ile Aktivasyon Anahtarı Yönetimi - Bayi
-Version: 1.5
+Version: 1.4
 Author: [melih&ktidev]
 */
 
@@ -23,11 +23,6 @@ function generate_activation_key_for_order($order_id) {
     $user_id = $order->get_user_id();
     $user_email = $order->get_billing_email();
     $purchased_products = array();
-    $site_url = get_site_url();
-    # sadece http ise https yap
-    if (strpos($site_url, 'http://') !== false) {
-        $site_url = str_replace('http://', 'https://', $site_url);
-    }
 
     foreach ($order->get_items() as $item) {
         $product_id = $item->get_product_id();
@@ -48,8 +43,7 @@ function generate_activation_key_for_order($order_id) {
         'body' => array(
             'user_id' => $user_id,
             'user_email' => $user_email,
-            'purchased_products' => $purchased_products,
-            'satin_alinan_site' => $site_url
+            'purchased_products' => $purchased_products
         ),
         'cookies' => array()
     ));
@@ -191,13 +185,12 @@ add_filter('woocommerce_account_menu_items', 'custom_add_my_account_menu_items')
 
 function sync_products_from_other_site() {
     // Diğer sitenin API URL'si
-    $api_url = 'https://japonadam.com/wp-json/wc/v3/products';
+    $api_url = 'https://other-woocommerce-site.com/wp-json/wc/v3/products';
 
     // API isteği için parametreler
     $api_params = array(
-        'consumer_key' => 'ck_78fb4256246afed1205d7f6642b5c97fb96609cb',
-        'consumer_secret' => 'cs_af8245d0266a8a64b255cb777094950568a86a65',
-        'per_page' => 100 // Sayfa başına ürün sayısı
+        'consumer_key' => 'ck_your_consumer_key',
+        'consumer_secret' => 'cs_your_consumer_secret'
     );
 
     // HTTP GET isteği yap
@@ -209,55 +202,58 @@ function sync_products_from_other_site() {
         error_log("Something went wrong: $error_message");
     } else {
         $products = json_decode(wp_remote_retrieve_body($response), true);
-        $source_site_skus = array_column($products, 'sku');
 
-        // Mevcut tüm ürünlerin SKU'larını al
-        $args = array(
-            'post_type' => 'product',
-            'posts_per_page' => -1,
-            'fields' => 'ids'
-        );
-        $current_products = get_posts($args);
-        $current_site_skus = array();
-        foreach ($current_products as $product_id) {
-            $current_site_skus[] = get_post_meta($product_id, '_sku', true);
-        }
-
-        // Kaynak sitede olmayan ürünleri bul
-        $products_to_delete = array_diff($current_site_skus, $source_site_skus);
-
-        // Ürünleri güncelle veya ekle
         foreach ($products as $product) {
             $existing_product_id = wc_get_product_id_by_sku($product['sku']);
-            # ürün yoksa ekle
-            if (!$existing_product_id) {
 
-                // Ürün yok, ekle
-                $new_product_id = wp_insert_post([
+            if ($existing_product_id) {
+                // Ürün zaten var, güncelle
+                wp_update_post(array(
+                    'ID' => $existing_product_id,
+                    'post_content' => $product['description'],
+                    'post_excerpt' => $product['short_description']
+                ));
+                update_post_meta($existing_product_id, '_price', $product['price']);
+                update_post_meta($new_product_id, '_sku', $product['sku']);
+            } else {
+                $new_product = array(
                     'post_title' => $product['name'],
                     'post_content' => $product['description'],
+                    'post_excerpt' => $product['short_description'],
                     'post_status' => 'publish',
                     'post_type' => 'product',
-                ]);
+                    'post_author' => 1
+                );
+                $new_product_id = wp_insert_post($new_product);
                 update_post_meta($new_product_id, '_sku', $product['sku']);
-                update_post_meta($new_product_id, '_regular_price', $product['regular_price']);
-                update_post_meta($new_product_id, '_sale_price', $product['sale_price']);
                 update_post_meta($new_product_id, '_price', $product['price']);
-                wc_update_product_stock($new_product_id, $product['stock_quantity'], 'set');
-                if (isset($product['images']) && is_array($product['images']) && !empty($product['images'])) {
-                    $image_id = media_sideload_image($product['images'][0], $new_product_id, $product['name'], 'id');
-                    if (!is_wp_error($image_id)) {
-                        set_post_thumbnail($new_product_id, $image_id);
-                    }
-                }
-            }
-        }
 
-        // Kaynak sitede olmayan ürünleri sil
-        foreach ($products_to_delete as $sku_to_delete) {
-            $product_id_to_delete = wc_get_product_id_by_sku($sku_to_delete);
-            if ($product_id_to_delete) {
-                wp_delete_post($product_id_to_delete, true);
+                // Ürün resmini ekle
+                if (!empty($product['images'][0]['src'])) {
+                    $image_url = $product['images'][0]['src'];
+                    $upload_dir = wp_upload_dir();
+                    $image_data = file_get_contents($image_url);
+                    $filename = basename($image_url);
+                    if (wp_mkdir_p($upload_dir['path'])) {
+                        $file = $upload_dir['path'] . '/' . $filename;
+                    } else {
+                        $file = $upload_dir['basedir'] . '/' . $filename;
+                    }
+                    file_put_contents($file, $image_data);
+
+                    $wp_filetype = wp_check_filetype($filename, null);
+                    $attachment = array(
+                        'post_mime_type' => $wp_filetype['type'],
+                        'post_title' => sanitize_file_name($filename),
+                        'post_content' => '',
+                        'post_status' => 'inherit'
+                    );
+                    $attach_id = wp_insert_attachment($attachment, $file, $new_product_id);
+                    require_once(ABSPATH . 'wp-admin/includes/image.php');
+                    $attach_data = wp_generate_attachment_metadata($attach_id, $file);
+                    wp_update_attachment_metadata($attach_id, $attach_data);
+                    set_post_thumbnail($new_product_id, $attach_id);
+                }
             }
         }
     }
