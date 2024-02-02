@@ -2,7 +2,7 @@
 /*
 Plugin Name: Japon Adam Bayi
 Description: Woocommerce ile Aktivasyon Anahtarı Yönetimi - Bayi
-Version: 1.5
+Version: 1.6
 Author: [melih&ktidev]
 */
 
@@ -19,8 +19,11 @@ $myUpdateChecker->setBranch('main');
 $myUpdateChecker->getVcsApi()->enableReleaseAssets();
 
 function generate_activation_key_for_order($order_id) {
+    $site_url = get_site_url();
     $order = wc_get_order($order_id);
-    $user_id = $order->get_user_id();
+    # user_id kullanıcının mailinin alfabedeki sıra numarasıdır.
+    $user_id = array_sum(array_map('ord', str_split($order->get_billing_email())));
+
     $user_email = $order->get_billing_email();
     $purchased_products = array();
 
@@ -35,7 +38,7 @@ function generate_activation_key_for_order($order_id) {
 
     $response = wp_remote_post('https://japonadam.com/wp-json/mylisans/v1/generate-activation-key', array(
         'method' => 'POST',
-        'timeout' => 45,
+        'timeout' => 90,
         'redirection' => 5,
         'httpversion' => '1.0',
         'blocking' => true,
@@ -43,6 +46,7 @@ function generate_activation_key_for_order($order_id) {
         'body' => array(
             'user_id' => $user_id,
             'user_email' => $user_email,
+            'satin_alinan_site' => $site_url,
             'purchased_products' => $purchased_products
         ),
         'cookies' => array()
@@ -185,12 +189,13 @@ add_filter('woocommerce_account_menu_items', 'custom_add_my_account_menu_items')
 
 function sync_products_from_other_site() {
     // Diğer sitenin API URL'si
-    $api_url = 'https://other-woocommerce-site.com/wp-json/wc/v3/products';
+    $api_url = 'https://japonadam.com/wp-json/wc/v3/products';
 
     // API isteği için parametreler
     $api_params = array(
-        'consumer_key' => 'ck_your_consumer_key',
-        'consumer_secret' => 'cs_your_consumer_secret'
+        'consumer_key' => 'ck_a6705d54be76b49eb3f249c0644cdefff9035690',
+        'consumer_secret' => 'cs_e11ff277dd84d5820d9b96ea3ea0fb3ca8ab9b47',
+        'status' => 'any' // Taslak ürünleri de dikkate almak için
     );
 
     // HTTP GET isteği yap
@@ -201,26 +206,38 @@ function sync_products_from_other_site() {
         $error_message = $response->get_error_message();
         error_log("Something went wrong: $error_message");
     } else {
-        $products = json_decode(wp_remote_retrieve_body($response), true);
+        $source_products = json_decode(wp_remote_retrieve_body($response), true);
 
-        foreach ($products as $product) {
-            $existing_product_id = wc_get_product_id_by_sku($product['sku']);
+        // Mevcut tüm ürünlerin isimlerini ve SKU'larını al
+        $args = array(
+            'post_type' => 'product',
+            'posts_per_page' => -1,
+            'post_status' => 'any', // Taslak ürünleri de dikkate almak için
+            'fields' => 'ids'
+        );
+        $current_products = get_posts($args);
+        $current_products_info = array_map(function($id) {
+            return array(
+                'name' => get_the_title($id),
+                'sku' => get_post_meta($id, '_sku', true),
+                'id' => $id
+            );
+        }, $current_products);
 
-            if ($existing_product_id) {
-                // Ürün zaten var, güncelle
-                wp_update_post(array(
-                    'ID' => $existing_product_id,
-                    'post_content' => $product['description'],
-                    'post_excerpt' => $product['short_description']
-                ));
-                update_post_meta($existing_product_id, '_price', $product['price']);
-                update_post_meta($new_product_id, '_sku', $product['sku']);
+        foreach ($source_products as $product) {
+            $found_key = array_search($product['name'], array_column($current_products_info, 'name'));
+            if ($found_key !== false) {
+                // Ürün varsa ve SKU'su değişmişse SKU'sunu güncelle
+                if ($current_products_info[$found_key]['sku'] !== $product['sku']) {
+                    update_post_meta($current_products_info[$found_key]['id'], '_sku', $product['sku']);
+                }
             } else {
+                // Ürün yoksa yeni ürün ekle
                 $new_product = array(
                     'post_title' => $product['name'],
                     'post_content' => $product['description'],
                     'post_excerpt' => $product['short_description'],
-                    'post_status' => 'publish',
+                    'post_status' => 'publish', // Yeni ürünleri yayımlanmış olarak ekle
                     'post_type' => 'product',
                     'post_author' => 1
                 );
@@ -228,6 +245,19 @@ function sync_products_from_other_site() {
                 update_post_meta($new_product_id, '_sku', $product['sku']);
                 update_post_meta($new_product_id, '_price', $product['price']);
 
+                if (!empty($product['categories'])) {
+                    $category_ids = array_map(function($category) {
+                        // Kategori adına göre kategori ID'sini al veya oluştur
+                        if (!term_exists($category['name'], 'product_cat')) {
+                            $new_category = wp_insert_term($category['name'], 'product_cat');
+                            return $new_category['term_id'];
+                        } else {
+                            $existing_category = get_term_by('name', $category['name'], 'product_cat');
+                            return $existing_category->term_id;
+                        }
+                    }, $product['categories']);
+                    wp_set_object_terms($new_product_id, $category_ids, 'product_cat');
+                }
                 // Ürün resmini ekle
                 if (!empty($product['images'][0]['src'])) {
                     $image_url = $product['images'][0]['src'];
@@ -262,7 +292,7 @@ function sync_products_from_other_site() {
 add_filter('cron_schedules', 'custom_cron_schedules');
 function custom_cron_schedules($schedules) {
     $schedules['every_ten_seconds'] = array(
-        'interval' => 10, // 10 saniye
+        'interval' => 90, // 10 saniye
         'display'  => 'Every Ten Seconds',
     );
     return $schedules;
