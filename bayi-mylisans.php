@@ -292,7 +292,7 @@ function sync_products_from_other_site() {
 add_filter('cron_schedules', 'custom_cron_schedules');
 function custom_cron_schedules($schedules) {
     $schedules['every_ten_seconds'] = array(
-        'interval' => 90, // 10 saniye
+        'interval' => 300, // 10 saniye
         'display'  => 'Every Ten Seconds',
     );
     return $schedules;
