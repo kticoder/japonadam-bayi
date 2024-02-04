@@ -2,9 +2,12 @@
 /*
 Plugin Name: Japon Adam Bayi
 Description: Woocommerce ile Aktivasyon Anahtarı Yönetimi - Bayi
-Version: 1.7
+Version: 1.8
 Author: [melih&ktidev]
 */
+
+
+
 
 require 'plugin-update-checker/plugin-update-checker.php';
 use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
@@ -28,7 +31,9 @@ function generate_activation_key_for_order($order_id) {
     $purchased_products = array();
 
     foreach ($order->get_items() as $item) {
-        $product_id = $item->get_product_id();
+        // product id ürün sku'su
+        // $product_id = $item->get_product_id();
+        $product_id = $item->get_product()->get_sku();
         $quantity = $item->get_quantity();
         $purchased_products[] = array(
             'product_id' => $product_id,
@@ -170,7 +175,7 @@ function custom_my_account_endpoint_content() {
     // Step 6
     echo '<div class="border p-4 rounded">';
     echo '<h3 class="text-lg mb-2">6- Neredeyse bitti! Lisanslama için "Lisanslama Talimatları" sayfasına gidin.</h3>';
-    echo '<a href="https://japonadam.com/lisanslama-talimatlari/" target="_blank"><button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">Lisanslama Talimatları sayfasına git</button></a>';
+    echo '<a href="'. esc_attr($activation_code) .'/lisanslama-talimatlari/" target="_blank"><button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">Lisanslama Talimatları sayfasına git</button></a>';
     echo '</div>';
 //kapanış etiketleri
     echo '</div>'; // Closing the grid div
@@ -187,17 +192,33 @@ function custom_add_my_account_menu_items($items) {
 }
 add_filter('woocommerce_account_menu_items', 'custom_add_my_account_menu_items');
 
+add_action('rest_api_init', function () {
+    register_rest_route('japonadambayi/v1', '/sync-products/', array(
+        'methods' => 'POST',
+        'callback' => 'sync_products_from_other_site',
+        'permission_callback' => function () {
+            // Basit bir API anahtarı kontrolü
+            $api_key = isset($_GET['api_key']) ? $_GET['api_key'] : '';
+            if ($api_key === 'japontetik') {
+                return true;
+            }
+            return new WP_Error('rest_forbidden', esc_html__('Yetkilendirme başarısız.', 'my-text-domain'), array('status' => 401));
+        }
+    ));
+});
+
+
+
 function sync_products_from_other_site() {
     // Diğer sitenin API URL'si
     $api_url = 'https://japonadam.com/wp-json/wc/v3/products';
 
-    // API isteği için parametreler
     $api_params = array(
         'consumer_key' => 'ck_a6705d54be76b49eb3f249c0644cdefff9035690',
         'consumer_secret' => 'cs_e11ff277dd84d5820d9b96ea3ea0fb3ca8ab9b47',
+        'per_page' => 100, // 100 ürünü al
         'status' => 'any' // Taslak ürünleri de dikkate almak için
     );
-
     // HTTP GET isteği yap
     $response = wp_remote_get(add_query_arg($api_params, $api_url));
 
@@ -285,23 +306,25 @@ function sync_products_from_other_site() {
                     set_post_thumbnail($new_product_id, $attach_id);
                 }
             }
+
         }
     }
+    return new WP_REST_Response(array('message' => 'Ürünler başarıyla senkronize edildi'), 200);
 }
 // Özel zamanlama olayını tanımla
-add_filter('cron_schedules', 'custom_cron_schedules');
-function custom_cron_schedules($schedules) {
-    $schedules['every_ten_seconds'] = array(
-        'interval' => 300, // 10 saniye
-        'display'  => 'Every Ten Seconds',
-    );
-    return $schedules;
-}
+// add_filter('cron_schedules', 'custom_cron_schedules');
+// function custom_cron_schedules($schedules) {
+//     $schedules['every_ten_seconds'] = array(
+//         'interval' => 10, // 10 saniye
+//         'display'  => 'Every Ten Seconds',
+//     );
+//     return $schedules;
+// }
 
-// Eğer zamanlanmış olay yoksa, yeni bir tane oluştur
-if (!wp_next_scheduled('sync_products_event')) {
-    wp_schedule_event(time(), 'every_ten_seconds', 'sync_products_event');
-}
+// // Eğer zamanlanmış olay yoksa, yeni bir tane oluştur
+// if (!wp_next_scheduled('sync_products_event')) {
+//     wp_schedule_event(time(), 'every_ten_seconds', 'sync_products_event');
+// }
 
-// Zamanlanmış olayı tetikleyen eylemi ekle
-add_action('sync_products_event', 'sync_products_from_other_site');
+// // Zamanlanmış olayı tetikleyen eylemi ekle
+// add_action('sync_products_event', 'sync_products_from_other_site');
