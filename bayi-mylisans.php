@@ -2,7 +2,7 @@
 /*
 Plugin Name: Japon Adam Bayi
 Description: Woocommerce ile Aktivasyon Anahtarı Yönetimi - Bayi
-Version: 1.8
+Version: 1.9
 Author: [melih&ktidev]
 */
 
@@ -228,6 +228,7 @@ function sync_products_from_other_site() {
         error_log("Something went wrong: $error_message");
     } else {
         $source_products = json_decode(wp_remote_retrieve_body($response), true);
+        $source_product_skus = array_column($source_products, 'sku');
 
         // Mevcut tüm ürünlerin isimlerini ve SKU'larını al
         $args = array(
@@ -244,6 +245,17 @@ function sync_products_from_other_site() {
                 'id' => $id
             );
         }, $current_products);
+
+        $current_product_skus = array_map(function($id) {
+            return get_post_meta($id, '_sku', true);
+        }, $current_products);
+
+        foreach ($current_products_info as $product_info) {
+            if (!in_array($product_info['sku'], $source_product_skus)) {
+                error_log('Deleting product with SKU: ' . $product_info['sku']);
+                wp_delete_post($product_info['id'], true);
+            }
+        }
 
         foreach ($source_products as $product) {
             $found_key = array_search($product['name'], array_column($current_products_info, 'name'));
