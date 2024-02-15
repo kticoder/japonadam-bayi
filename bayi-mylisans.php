@@ -2,7 +2,7 @@
 /*
 Plugin Name: Japon Adam Bayi
 Description: Woocommerce ile Aktivasyon Anahtarı Yönetimi - Bayi
-Version: 1.10
+Version: 1.11
 Author: [melih&ktidev]
 */
 
@@ -175,7 +175,7 @@ function custom_my_account_endpoint_content() {
     // Step 6
     echo '<div class="border p-4 rounded">';
     echo '<h3 class="text-lg mb-2">6- Neredeyse bitti! Lisanslama için "Lisanslama Talimatları" sayfasına gidin.</h3>';
-    echo '<a href="'. esc_attr($activation_code) .'/lisanslama-talimatlari/" target="_blank"><button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">Lisanslama Talimatları sayfasına git</button></a>';
+    echo '<a href="'. esc_attr($site_url) .'/lisanslama-talimatlari/" target="_blank"><button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">Lisanslama Talimatları sayfasına git</button></a>';
     echo '</div>';
 //kapanış etiketleri
     echo '</div>'; // Closing the grid div
