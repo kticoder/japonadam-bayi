@@ -2,7 +2,7 @@
 /*
 Plugin Name: Japon Adam Bayi
 Description: Woocommerce ile Aktivasyon Anahtarı Yönetimi - Bayi
-Version: 1.11
+Version: 1.12
 Author: [melih&ktidev]
 */
 
@@ -214,8 +214,8 @@ function sync_products_from_other_site() {
     $api_url = 'https://japonadam.com/wp-json/wc/v3/products';
 
     $api_params = array(
-        'consumer_key' => 'ck_a6705d54be76b49eb3f249c0644cdefff9035690',
-        'consumer_secret' => 'cs_e11ff277dd84d5820d9b96ea3ea0fb3ca8ab9b47',
+        'consumer_key' => 'ck_428669908c4bd0a095f2038a45863b174d7e5f84',
+        'consumer_secret' => 'cs_31e35d490f2dc19ebd126751efd341109c41af30',
         'per_page' => 100, // 100 ürünü al
         'status' => 'any' // Taslak ürünleri de dikkate almak için
     );
@@ -229,7 +229,6 @@ function sync_products_from_other_site() {
     } else {
         $source_products = json_decode(wp_remote_retrieve_body($response), true);
         $source_product_skus = array_column($source_products, 'sku');
-
         // Mevcut tüm ürünlerin isimlerini ve SKU'larını al
         $args = array(
             'post_type' => 'product',
