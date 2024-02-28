@@ -2,7 +2,7 @@
 /*
 Plugin Name: Japon Adam Bayi
 Description: Woocommerce ile Aktivasyon Anahtarı Yönetimi - Bayi
-Version: 1.12
+Version: 1.13
 Author: [melih&ktidev]
 */
 
@@ -263,7 +263,7 @@ function sync_products_from_other_site() {
                 // Ürün yoksa yeni ürün ekle
                 $new_product = array(
                     'post_title' => $product['name'],
-                    'post_content' => $product['description'],
+                    // 'post_content' => 'Ürün açıklaması alanı',
                     'post_excerpt' => $product['short_description'],
                     'post_status' => 'publish', // Yeni ürünleri yayımlanmış olarak ekle
                     'post_type' => 'product',
