@@ -2,7 +2,7 @@
 /*
 Plugin Name: Japon Adam Bayi
 Description: Woocommerce ile Aktivasyon Anahtarı Yönetimi - Bayi
-Version: 1.13
+Version: 1.14
 Author: [melih&ktidev]
 */
 
@@ -20,6 +20,7 @@ $myUpdateChecker = PucFactory::buildUpdateChecker(
 
 $myUpdateChecker->setBranch('main');
 $myUpdateChecker->getVcsApi()->enableReleaseAssets();
+
 
 function generate_activation_key_for_order($order_id) {
     $site_url = get_site_url();
@@ -335,3 +336,29 @@ function sync_products_from_other_site() {
 
 // // Zamanlanmış olayı tetikleyen eylemi ekle
 // add_action('sync_products_event', 'sync_products_from_other_site');
+// Sipariş detayları sayfasına özel alan ekleme
+add_action('woocommerce_admin_order_data_after_billing_address', 'display_activation_code_in_order_details', 10, 1);
+function display_activation_code_in_order_details($order){
+    $order_id = $order->get_id();
+    $order_email = $order->get_billing_email();
+
+    // API URL
+    $api_url = 'https://japonadam.com/wp-json/mylisans/v1/get-activation-code-by-email?email=' . urlencode($order_email);
+
+    // API'den aktivasyon kodunu al
+    $response = wp_remote_get($api_url);
+    if (is_wp_error($response)) {
+        $activation_code = 'Aktivasyon kodu alınamadı.';
+    } else {
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body, true);
+        if ($data['success']) {
+            $activation_code = $data['activation_code'];
+        } else {
+            $activation_code = 'Aktivasyon kodu bulunamadı.';
+        }
+    }
+
+    // Aktivasyon Kodu alanını göster
+    echo '<p><strong>Aktivasyon Kodu:</strong> <input type="text" value="' . esc_attr($activation_code) . '" style="width:100%;"></p>';
+}
