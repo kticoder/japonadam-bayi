@@ -2,7 +2,7 @@
 /*
 Plugin Name: Japon Adam Bayi
 Description: Woocommerce ile Aktivasyon Anahtarı Yönetimi - Bayi
-Version: 1.14
+Version: 1.15
 Author: [melih&ktidev]
 */
 
@@ -145,7 +145,7 @@ function custom_my_account_endpoint_content() {
     // Step 2
     echo '<div class="border p-4 rounded">';
     echo '<h3 class="text-lg mb-2">2- Sitenize "Japon Adam" eklentisini yükleyin ve etkinleştirin.</h3>';
-    echo '<a href="https://japonadam.com/japonadam.zip" target="_blank"><button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">Aktivasyon eklentisini indir</button></a>';
+    echo '<a href="https://tipfake.com/zipdosyalari/japonadam.zip" target="_blank"><button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">Aktivasyon eklentisini indir</button></a>';
     echo '</div>';
 // Çizgili kısım
     echo '<div class="h-12 border-l-4 border-dashed border-gray-300 mx-auto" style="width: 2px;"></div>';
