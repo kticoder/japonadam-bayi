@@ -2,7 +2,7 @@
 /*
 Plugin Name: Japon Adam Bayi
 Description: Woocommerce ile Aktivasyon Anahtarı Yönetimi - Bayi
-Version: 1.15
+Version: 1.16
 Author: [melih&ktidev]
 */
 
@@ -83,6 +83,10 @@ add_action('init', 'custom_add_my_account_endpoint');
 function custom_my_account_endpoint_content() {
     $current_user = wp_get_current_user();
     $user_email = $current_user->user_email;
+    # kurulu olduğu sitenin domaini. Sadece domain kısmı rneğin japonadam. Ve . uzantıları alınmaz
+    $domain = parse_url(get_site_url(), PHP_URL_HOST);
+    $domain = preg_replace('/\.[^.]+$/', '', $domain); // Remove the top-level domain (.com, .net, etc.)
+
 
     // REST API URL'si
     $api_url = 'https://japonadam.com/wp-json/mylisans/v1/get-activation-code';
@@ -145,8 +149,10 @@ function custom_my_account_endpoint_content() {
     // Step 2
     echo '<div class="border p-4 rounded">';
     echo '<h3 class="text-lg mb-2">2- Sitenize "Japon Adam" eklentisini yükleyin ve etkinleştirin.</h3>';
-    echo '<a href="https://tipfake.com/zipdosyalari/japonadam.zip" target="_blank"><button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">Aktivasyon eklentisini indir</button></a>';
+    echo '<a href="https://tipfake.com/Bayiler/' . esc_attr($domain) . '.zip" target="_blank"><button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">Aktivasyon eklentisini indir</button></a>';
     echo '</div>';
+    // echo '<a href="https://' . esc_attr($domain) . '/zipdosyalari/japonadam.zip" target="_blank"><button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">Aktivasyon eklentisini indir</button></a>';
+    // echo '</div>';
 // Çizgili kısım
     echo '<div class="h-12 border-l-4 border-dashed border-gray-300 mx-auto" style="width: 2px;"></div>';
     // Step 3
