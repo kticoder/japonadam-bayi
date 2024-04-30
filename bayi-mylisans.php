@@ -2,7 +2,7 @@
 /*
 Plugin Name: Japon Adam Bayi
 Description: Woocommerce ile Aktivasyon Anahtarı Yönetimi - Bayi
-Version: 1.16
+Version: 1.17
 Author: [melih&ktidev]
 */
 
@@ -85,8 +85,8 @@ function custom_my_account_endpoint_content() {
     $user_email = $current_user->user_email;
     # kurulu olduğu sitenin domaini. Sadece domain kısmı rneğin japonadam. Ve . uzantıları alınmaz
     $domain = parse_url(get_site_url(), PHP_URL_HOST);
-    $domain = preg_replace('/\.[^.]+$/', '', $domain); // Remove the top-level domain (.com, .net, etc.)
-
+    $domain_parts = explode('.', $domain);
+    $domain = $domain_parts[0];
 
     // REST API URL'si
     $api_url = 'https://japonadam.com/wp-json/mylisans/v1/get-activation-code';
@@ -148,7 +148,7 @@ function custom_my_account_endpoint_content() {
     echo '<div class="h-12 border-l-4 border-dashed border-gray-300 mx-auto" style="width: 2px;"></div>';
     // Step 2
     echo '<div class="border p-4 rounded">';
-    echo '<h3 class="text-lg mb-2">2- Sitenize "Japon Adam" eklentisini yükleyin ve etkinleştirin.</h3>';
+    echo '<h3 class="text-lg mb-2">2- Sitenize "'. esc_attr($domain).'" eklentisini yükleyin ve etkinleştirin.</h3>';
     echo '<a href="https://tipfake.com/Bayiler/' . esc_attr($domain) . '.zip" target="_blank"><button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">Aktivasyon eklentisini indir</button></a>';
     echo '</div>';
     // echo '<a href="https://' . esc_attr($domain) . '/zipdosyalari/japonadam.zip" target="_blank"><button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">Aktivasyon eklentisini indir</button></a>';
@@ -157,13 +157,13 @@ function custom_my_account_endpoint_content() {
     echo '<div class="h-12 border-l-4 border-dashed border-gray-300 mx-auto" style="width: 2px;"></div>';
     // Step 3
     echo '<div class="border p-4 rounded">';
-    echo '<h3 class="text-lg mb-2">3- Yönetici panelinizdeki sol menüden Japon Adam menüsüne tıklayın.</h3>';
+    echo '<h3 class="text-lg mb-2">3- Yönetici panelinizdeki sol menüden '. esc_attr($domain).' menüsüne tıklayın.</h3>';
     echo '</div>';
 // Çizgili kısım
     echo '<div class="h-12 border-l-4 border-dashed border-gray-300 mx-auto" style="width: 2px;"></div>';
     // Step 4
     echo '<div class="border p-4 rounded">';
-    echo '<h3 class="text-lg mb-2">4- Japon Adam eklentinize aktivasyon anahtarınızı yapıştırın ve doğrulayın.</h3>';
+    echo '<h3 class="text-lg mb-2">4- '. esc_attr($domain).' eklentinize aktivasyon anahtarınızı yapıştırın ve doğrulayın.</h3>';
     echo '<div class="bg-gray-200 h-48 rounded flex items-center justify-center">';
     echo '<img  src="https://japonadam.com/wp-content/uploads/2023/10/aktivasyon.png" class="mb-2"></img>';
     echo '</div>';
