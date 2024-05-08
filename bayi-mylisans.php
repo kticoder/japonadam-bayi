@@ -2,7 +2,7 @@
 /*
 Plugin Name: Japon Adam Bayi
 Description: Woocommerce ile Aktivasyon Anahtarı Yönetimi - Bayi
-Version: 1.17
+Version: 1.18
 Author: [melih&ktidev]
 */
 
@@ -85,6 +85,7 @@ function custom_my_account_endpoint_content() {
     $user_email = $current_user->user_email;
     # kurulu olduğu sitenin domaini. Sadece domain kısmı rneğin japonadam. Ve . uzantıları alınmaz
     $domain = parse_url(get_site_url(), PHP_URL_HOST);
+    $domain = str_replace('www.', '', $domain); // www. öneki kaldırılıyor
     $domain_parts = explode('.', $domain);
     $domain = $domain_parts[0];
 
