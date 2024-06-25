@@ -2,7 +2,7 @@
 /*
 Plugin Name: Japon Adam Bayi
 Description: Woocommerce ile Aktivasyon Anahtarı Yönetimi - Bayi
-Version: 1.18
+Version: 1.19
 Author: [melih&ktidev]
 */
 
@@ -83,118 +83,124 @@ add_action('init', 'custom_add_my_account_endpoint');
 function custom_my_account_endpoint_content() {
     $current_user = wp_get_current_user();
     $user_email = $current_user->user_email;
-    # kurulu olduğu sitenin domaini. Sadece domain kısmı rneğin japonadam. Ve . uzantıları alınmaz
     $domain = parse_url(get_site_url(), PHP_URL_HOST);
-    $domain = str_replace('www.', '', $domain); // www. öneki kaldırılıyor
+    $domain = str_replace('www.', '', $domain);
     $domain_parts = explode('.', $domain);
     $domain = $domain_parts[0];
 
-    // REST API URL'si
     $api_url = 'https://japonadam.com/wp-json/mylisans/v1/get-activation-code';
     $site_url = get_site_url();
-    # sadece http ise https yap
     if (strpos($site_url, 'http://') !== false) {
         $site_url = str_replace('http://', 'https://', $site_url);
     }
-    // API isteği için parametreler
     $api_params = array(
         'user_email' => $user_email,
         'site_linki' => $site_url
     );
 
-    // HTTP GET isteği yap
     $response = wp_remote_get(add_query_arg($api_params, $api_url));
 
-    // Yanıtı kontrol et ve hata olup olmadığını belirle
+    // Check if the site language is English
+    $is_english = (get_locale() === 'en_US');
+
     if (is_wp_error($response)) {
         $error_message = $response->get_error_message();
-        echo "Bir şeyler yanlış gitti: $error_message";
+        echo $is_english ? "Something went wrong: $error_message" : "Bir şeyler yanlış gitti: $error_message";
     } else {
         $body = wp_remote_retrieve_body($response);
         $data = json_decode($body, true);
 
         if ($data['success']) {
             $activation_code = $data['activation_code'];
-        }  
-        else {
-            $activation_code =  $data['message'];
+        } else {
+            $activation_code = $data['message'];
         }
     }
 
-    // Tailwind CSS CDN
     echo '<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">';
 
     echo '<div class="p-6">';
-    echo '<h2 class="text-3xl mb-4">Aktivasyon İşlemleri</h2>';
-    echo '<p class="text-md mb-4">Dünyadaki ilk ve tek "Ultra Hassas" premium lisans sistemine hoşgeldiniz!</br></br>Sitenizin yönetici bilgilerini bizimle paylaşmanıza gerek kalmadı. Artık kendi premium lisanslarınızı hızla, güvenle ve kolaylıkla kurabilirsiniz.</br></br>Sadece 2 dakikada ürünlerinizi etkinleştirin.</p>';
+    echo '<h2 class="text-3xl mb-4">' . ($is_english ? 'Activation Procedures' : 'Aktivasyon İşlemleri') . '</h2>';
+    echo '<p class="text-md mb-4">' . ($is_english ? 
+        "Welcome to the world's first and only \"Ultra Sensitive\" premium licensing system!</br></br>You no longer need to share your site's admin information with us. Now you can quickly, securely, and easily set up your own premium licenses.</br></br>Activate your products in just 2 minutes." : 
+        "Dünyadaki ilk ve tek \"Ultra Hassas\" premium lisans sistemine hoşgeldiniz!</br></br>Sitenizin yönetici bilgilerini bizimle paylaşmanıza gerek kalmadı. Artık kendi premium lisanslarınızı hızla, güvenle ve kolaylıkla kurabilirsiniz.</br></br>Sadece 2 dakikada ürünlerinizi etkinleştirin.") . '</p>';
 
     echo '<div class="grid grid-cols-1 gap-6">';
     
     // Step 1
     echo '<div class="border p-4 rounded">';
-    echo '<h3 class="text-lg mb-2">1- Satın aldığınız ürünleri kurabilmek için aktivasyon anahtarınızı alın.</h3>';
+    echo '<h3 class="text-lg mb-2">' . ($is_english ? '1- Get your activation key to install the products you purchased.' : '1- Satın aldığınız ürünleri kurabilmek için aktivasyon anahtarınızı alın.') . '</h3>';
     echo '<div class="bg-gray-100 p-4 rounded">';
 
     if ($activation_code) {
-    echo '<label for="activationCode">Aktivasyon anahtarınız</label>';
-    echo '<input type="text" id="activationCode" value="' . esc_attr($activation_code) . '" class="mt-1 p-2 w-full border rounded" readonly>';
-} else {
-    echo 'Aktivasyon anahtarınız bulunmamaktadır.';
-}
-
+        echo '<label for="activationCode">' . ($is_english ? 'Your activation key' : 'Aktivasyon anahtarınız') . '</label>';
+        echo '<input type="text" id="activationCode" value="' . esc_attr($activation_code) . '" class="mt-1 p-2 w-full border rounded" readonly>';
+    } else {
+        echo $is_english ? 'You do not have an activation key.' : 'Aktivasyon anahtarınız bulunmamaktadır.';
+    }
 
     echo '</div>';
     echo '</div>';
-// Çizgili kısım
+
+    // Dashed line
     echo '<div class="h-12 border-l-4 border-dashed border-gray-300 mx-auto" style="width: 2px;"></div>';
+
     // Step 2
     echo '<div class="border p-4 rounded">';
-    echo '<h3 class="text-lg mb-2">2- Sitenize "'. esc_attr($domain).'" eklentisini yükleyin ve etkinleştirin.</h3>';
-    echo '<a href="https://tipfake.com/Bayiler/' . esc_attr($domain) . '.zip" target="_blank"><button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">Aktivasyon eklentisini indir</button></a>';
+    echo '<h3 class="text-lg mb-2">' . ($is_english ? "2- Install and activate the \"$domain\" plugin on your site." : "2- Sitenize \"$domain\" eklentisini yükleyin ve etkinleştirin.") . '</h3>';
+    echo '<a href="https://tipfake.com/Bayiler/' . esc_attr($domain) . '.zip" target="_blank"><button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">' . ($is_english ? 'Download Activation Plugin' : 'Aktivasyon eklentisini indir') . '</button></a>';
     echo '</div>';
-    // echo '<a href="https://' . esc_attr($domain) . '/zipdosyalari/japonadam.zip" target="_blank"><button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">Aktivasyon eklentisini indir</button></a>';
-    // echo '</div>';
-// Çizgili kısım
+
+    // Dashed line
     echo '<div class="h-12 border-l-4 border-dashed border-gray-300 mx-auto" style="width: 2px;"></div>';
+
     // Step 3
     echo '<div class="border p-4 rounded">';
-    echo '<h3 class="text-lg mb-2">3- Yönetici panelinizdeki sol menüden '. esc_attr($domain).' menüsüne tıklayın.</h3>';
+    echo '<h3 class="text-lg mb-2">' . ($is_english ? "3- Click on the $domain menu in the left sidebar of your admin panel." : "3- Yönetici panelinizdeki sol menüden $domain menüsüne tıklayın.") . '</h3>';
     echo '</div>';
-// Çizgili kısım
+    echo '</h3>';
+    echo '</div>';
+
+    // Dashed line
     echo '<div class="h-12 border-l-4 border-dashed border-gray-300 mx-auto" style="width: 2px;"></div>';
+
     // Step 4
     echo '<div class="border p-4 rounded">';
-    echo '<h3 class="text-lg mb-2">4- '. esc_attr($domain).' eklentinize aktivasyon anahtarınızı yapıştırın ve doğrulayın.</h3>';
+    echo '<h3 class="text-lg mb-2">' . ($is_english ? "4- Paste your activation key into your $domain plugin and verify it." : "4- $domain eklentinize aktivasyon anahtarınızı yapıştırın ve doğrulayın.") . '</h3>';
     echo '<div class="bg-gray-200 h-48 rounded flex items-center justify-center">';
-    echo '<img  src="https://japonadam.com/wp-content/uploads/2023/10/aktivasyon.png" class="mb-2"></img>';
+    echo '<img src="https://japonadam.com/wp-content/uploads/2023/10/aktivasyon.png" class="mb-2"></img>';
     echo '</div>';
     echo '</div>';
-    // Çizgili kısım
+
+    // Dashed line
     echo '<div class="h-12 border-l-4 border-dashed border-gray-300 mx-auto" style="width: 2px;"></div>';
+
     // Step 5
     echo '<div class="border p-4 rounded">';
-    echo '<h3 class="text-lg mb-2">5- "Satın Aldıklarım" sekmesine tıklayın ve ürünlerinizin kurulumunu yapın.</h3>';
+    echo '<h3 class="text-lg mb-2">' . ($is_english ? '5- Click on the "My Purchases" tab and install your products.' : '5- "Satın Aldıklarım" sekmesine tıklayın ve ürünlerinizin kurulumunu yapın.') . '</h3>';
     echo '<div class="bg-gray-200 p-4 rounded flex items-center justify-center">';
     echo '<span class="w-1/2"><img src="https://japonadam.com/wp-content/uploads/2023/10/kurulum-urun.png"></img></span>';
     echo '</div>';
     echo '</div>';
-    // Çizgili kısım
+
+    // Dashed line
     echo '<div class="h-12 border-l-4 border-dashed border-gray-300 mx-auto" style="width: 2px;"></div>';
+
     // Step 6
     echo '<div class="border p-4 rounded">';
-    echo '<h3 class="text-lg mb-2">6- Neredeyse bitti! Lisanslama için "Lisanslama Talimatları" sayfasına gidin.</h3>';
-    echo '<a href="'. esc_attr($site_url) .'/lisanslama-talimatlari/" target="_blank"><button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">Lisanslama Talimatları sayfasına git</button></a>';
+    echo '<h3 class="text-lg mb-2">' . ($is_english ? '6- Almost done! Go to the "Licensing Instructions" page for licensing.' : '6- Neredeyse bitti! Lisanslama için "Lisanslama Talimatları" sayfasına gidin.') . '</h3>';
+    echo '<a href="'. esc_attr($site_url) .'/lisanslama-talimatlari/" target="_blank"><button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">' . ($is_english ? 'Go to Licensing Instructions page' : 'Lisanslama Talimatları sayfasına git') . '</button></a>';
     echo '</div>';
-//kapanış etiketleri
+
     echo '</div>'; // Closing the grid div
     echo '</div>'; // Closing the main div
 }
-
 add_action('woocommerce_account_aktivasyon_endpoint', 'custom_my_account_endpoint_content');
 // Hesabım menüsüne aktivasyon anahtarını ekleme
 function custom_add_my_account_menu_items($items) {
     $new_items = array();
-    $new_items['aktivasyon'] = __('Aktivasyon İşlemleri', 'woocommerce');
+    $is_english = (get_locale() === 'en_US');
+    $new_items['aktivasyon'] = $is_english ? __('Activation Procedures', 'woocommerce') : __('Aktivasyon İşlemleri', 'woocommerce');
     $new_order = array_slice($items, 0, 0, true) + $new_items + array_slice($items, 1, null, true);
     return $new_order;
 }
@@ -369,3 +375,46 @@ function display_activation_code_in_order_details($order){
     // Aktivasyon Kodu alanını göster
     echo '<p><strong>Aktivasyon Kodu:</strong> <input type="text" value="' . esc_attr($activation_code) . '" style="width:100%;"></p>';
 }
+
+
+class JaponAdamNotifications {
+    public function __construct() {
+        add_action('admin_bar_menu', [$this, 'custom_toolbar_menu'], 999);
+    }
+
+    public function custom_toolbar_menu($wp_admin_bar) {
+        $notifications = $this->get_notifications();
+        $notification_count = count($notifications);
+
+        $args = [
+            'id' => 'japonadam_notifications',
+            'title' => '<span class="ab-icon dashicons dashicons-bell"></span><span class="ab-label">' . $notification_count . '</span>',
+            'href' => '#',
+        ];
+        $wp_admin_bar->add_node($args);
+
+        foreach ($notifications as $notification) {
+            $wp_admin_bar->add_node([
+                'id' => 'japonadam_notification_' . $notification->id,
+                'parent' => 'japonadam_notifications',
+                'title' => $notification->bildirim_metni,
+                'href' => '#',
+            ]);
+        }
+    }
+
+    private function get_notifications() {
+        $response = wp_remote_get('https://japonadam.com/wp-json/bildirimler/v1/liste?sorgu=bayi');
+        
+        if (is_wp_error($response)) {
+            return [];
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        $notifications = json_decode($body);
+
+        return is_array($notifications) ? $notifications : [];
+    }
+}
+
+$japonadam_notifications = new JaponAdamNotifications();
