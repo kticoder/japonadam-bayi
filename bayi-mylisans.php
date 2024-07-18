@@ -2,7 +2,7 @@
 /*
 Plugin Name: Japon Adam Bayi
 Description: Woocommerce ile Aktivasyon Anahtarı Yönetimi - Bayi
-Version: 1.19
+Version: 1.21
 Author: [melih&ktidev]
 */
 
@@ -10,6 +10,15 @@ Author: [melih&ktidev]
 
 
 require 'plugin-update-checker/plugin-update-checker.php';
+include 'tablar.php';
+require_once plugin_dir_path(__FILE__) . 'whitelabel.php';
+
+function whitelabel_menu() {
+    add_menu_page('Whitelabel Ayarları', 'Whitelabel', 'manage_options', 'whitelabel-settings', 'whitelabel_settings_page', 'dashicons-admin-customizer', 99);
+    add_submenu_page('whitelabel-settings', 'Tablar', 'Tablar', 'read', 'tablar', 'tailwind_issues_page');
+}
+
+
 use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
 
 $myUpdateChecker = PucFactory::buildUpdateChecker(
