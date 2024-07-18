@@ -20,7 +20,7 @@ add_action('admin_menu', 'whitelabel_menu');
 // }
 
 // Settings page
-function whitelabel_settings_page() {
+function bayilik_settings_page() {
     // Enqueue Tailwind CSS
     wp_enqueue_style('tailwind', 'https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css');
 

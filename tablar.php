@@ -1,5 +1,5 @@
 <?php
-function tailwind_issues_page() {
+function menu_sekme_page() {
     global $wpdb;
     $table_name = $wpdb->prefix . 'japonadam_issues';
     $category_table_name = $wpdb->prefix . 'japonadam_issue_categories';
