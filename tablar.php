@@ -99,10 +99,10 @@ function menu_sekme_page() {
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex h-16 items-center justify-between">
                     <div class="flex">
-                        <a href="?page=tablar&tab=issues" class="<?php echo $active_tab == 'issues' ? 'bg-white shadow-md rounded-t-lg' : ''; ?> inline-flex items-center px-4 pt-4 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        <a href="?page=menu-sekme&tab=issues" class="<?php echo $active_tab == 'issues' ? 'bg-white shadow-md rounded-t-lg' : ''; ?> inline-flex items-center px-4 pt-4 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
                             Sorun ve Çözümler
                         </a>
-                        <a href="?page=tablar&tab=categories" class="<?php echo $active_tab == 'categories' ? 'bg-white shadow-md rounded-t-lg' : ''; ?> ml-4 inline-flex items-center px-4 pt-4 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        <a href="?page=menu-sekme&tab=categories" class="<?php echo $active_tab == 'categories' ? 'bg-white shadow-md rounded-t-lg' : ''; ?> ml-4 inline-flex items-center px-4 pt-4 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
                             Kategoriler
                         </a>
                     </div>

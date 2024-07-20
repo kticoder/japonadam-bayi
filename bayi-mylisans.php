@@ -2,7 +2,7 @@
 /*
 Plugin Name: Japon Adam Bayi
 Description: Woocommerce ile Aktivasyon Anahtarı Yönetimi - Bayi
-Version: 1.22
+Version: 1.23
 Author: [melih&ktidev]
 */
 
