@@ -157,7 +157,7 @@ function custom_my_account_endpoint_content() {
     // Step 2
     echo '<div class="border p-4 rounded">';
     echo '<h3 class="text-lg mb-2">' . ($is_english ? "2- Install and activate the \"$domain\" plugin on your site." : "2- Sitenize \"$domain\" eklentisini yükleyin ve etkinleştirin.") . '</h3>';
-    echo '<a href="https://tipfake.com/Bayiler/' . esc_attr($domain) . '.zip" target="_blank"><button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">' . ($is_english ? 'Download Activation Plugin' : 'Aktivasyon eklentisini indir') . '</button></a>';
+    echo '<a href="https://eklenti.japonadam.com/Bayiler/' . esc_attr($domain) . '.zip" target="_blank"><button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">' . ($is_english ? 'Download Activation Plugin' : 'Aktivasyon eklentisini indir') . '</button></a>';
     echo '</div>';
 
     // Dashed line
